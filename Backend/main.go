@@ -75,6 +75,18 @@ func gestionAchat(w http.ResponseWriter, r *http.Request) {
 
     // Process each item
     for _, item := range req.Items {
+		var currentStock int
+		err := db.QueryRow(`SELECT stock FROM produits WHERE nom=?`, item.Name).Scan(&currentStock)
+		if err != nil {
+			http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	
+		// Check if enough stock
+		if currentStock < item.Quantite {
+			http.Error(w, "Not enough stock for "+item.Name, http.StatusBadRequest)
+			return
+		}
         // Example: decrement stock in DB
         db.Exec("UPDATE produits SET stock = stock - ? WHERE nom = ?", item.Quantite, item.Name)
 		db.Exec("INSERT INTO ventes (produit,stock,heure) VALUES (?,?,datetime('now'))", item.Name, item.Quantite)
@@ -105,7 +117,7 @@ func creerProduit(w http.ResponseWriter, r *http.Request) {
     // Insert into SQLite DB
     _, err = db.Exec(
         `INSERT INTO produits (nom, prixVente,stock,category) VALUES (?,?,?,?)`,
-        p.Nom, p.PrixVente,p.Stock ,p.Category,
+        p.Nom, p.PrixVente,0 ,p.Category,
     )
     if err != nil {
         http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
@@ -160,13 +172,16 @@ func ajouterStock(w http.ResponseWriter, r *http.Request) {
 
     _, err := db.Exec(`
     INSERT INTO restock (produit, prixAchat, stock) VALUES (?, ?, ?);
-    UPDATE produits SET stock = stock + ? WHERE nom = "?";
-    `, produit, prix_achat, quantite, quantite, produit)
+    `, produit, prix_achat, quantite)
 	if err != nil {
         http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
         return
     }
-
+	_, err = db.Exec(`UPDATE produits SET stock = stock + ? WHERE nom = ?;`, quantite, produit)
+	if err != nil {
+        http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
 }
 func getHistory(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodGet {
