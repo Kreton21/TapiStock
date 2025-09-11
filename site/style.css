@@ -1,0 +1,31 @@
+body {
+  padding: 1rem;
+}
+main {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 1rem;
+}
+.products {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.cart {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+}
+.cart-items {
+  min-height: 100px;
+  margin-bottom: 1rem;
+}
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+.total {
+  font-weight: bold;
+  margin: 1rem 0;
+}

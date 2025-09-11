@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Base URL of your backend
-BASE_URL="http://localhost:8080"
+BASE_URL="http://localhost:9090"
 
 echo "=== Creating products ==="
 curl -s -X POST "$BASE_URL/api/creerProduit" \

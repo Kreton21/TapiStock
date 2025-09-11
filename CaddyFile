@@ -1,0 +1,7 @@
+:8080 {
+    root * ./site
+    file_server
+
+    # Proxy API requests to your Go backend
+    reverse_proxy /api/* localhost:9090
+}
