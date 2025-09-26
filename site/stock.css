@@ -1,0 +1,150 @@
+.stock-main {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 1.5rem;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+  
+  /* Left column - Stock list */
+  .stock-list {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-y: auto;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    height: 100%;
+  }
+  
+  .stock-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .stock-table th {
+    text-align: left;
+    padding: 0.8rem 0.5rem;
+    border-bottom: 2px solid #ddd;
+    position: sticky;
+    top: 0;
+    background-color: #f9f9f9;
+    z-index: 1;
+  }
+  
+  .stock-table td {
+    padding: 0.8rem 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .stock-table tr:hover {
+    background-color: #f5f5f5;
+  }
+  
+  /* Right column - Forms */
+  .stock-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+  }
+  
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .action-buttons button {
+    padding: 0.8rem;
+    border-radius: 6px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+  
+  #addProductBtn {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  #restockBtn {
+    background-color: #2ecc71;
+    color: white;
+  }
+  
+  #exportBtn {
+    background-color: #f39c12;
+    color: white;
+  }
+  
+  .back-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .back-btn:hover {
+    background-color: #c0392b;
+  }
+  
+  .stock-form {
+    background-color: #fff;
+    border-radius: 8px;
+    padding: 1.2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: none;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .stock-form h3 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    font-size: 1.2rem;
+  }
+  
+  .stock-form input, 
+  .stock-form select {
+    padding: 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+  
+  .form-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .save-btn {
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+  }
+  
+  .cancel-btn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .low-stock {
+    color: #e74c3c;
+    font-weight: bold;
+  }

@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <title>TapiStock</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preload" href="stock.html" as="fetch" crossorigin="anonymous">
+  <link rel="shortcut icon" href="/media/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/media/favicon.ico" type="image/x-icon">
   <!-- Minimal CSS -->
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
@@ -11,18 +14,37 @@
 </head>
 <body>
   <header>
-    <h1>Stock Shop</h1>
+    <img src="/media/logoRenard.png" alt="Logo Renard" class="small-logo">
+    <h1>TapiStock</h1>
+    <button id="stockBtn" class="stock-btn">Gestion Stock</button>
+    <button id="historyBtn" class="history-btn">Historique</button>
   </header>
+  
+  <!-- History Modal -->
+  <div id="historyModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <h2>Historique des Ventes</h2>
+      <div id="historyContent" class="history-content"></div>
+    </div>
+  </div>
+  
   <main>
-    <!-- Product Grid -->
-    <section class="products" id="products"></section>
+    <!-- Product Grid with Category Tabs -->
+    <div class="products-container">
+      <div class="category-tabs" id="category-tabs">
+        <button class="tab-btn active" data-category="all">Tous</button>
+        <!-- Additional tabs will be added dynamically -->
+      </div>
+      <section class="products" id="products"></section>
+    </div>
 
     <!-- Cart -->
     <aside class="cart">
-      <h4>Cart</h4>
+      <h4>Panier</h4>
       <div class="cart-items" id="cart-items"></div>
       <div class="total">Total: <span id="total">0</span> €</div>
-      <button id="buyBtn">BUY</button>
+      <button id="buyBtn">Acheter</button>
     </aside>
   </main>
 

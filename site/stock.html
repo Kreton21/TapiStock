@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Gestion Stock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preload" href="index.html" as="fetch" crossorigin="anonymous">
+
+  <!-- Minimal CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="stock.css">
+
+</head>
+<body>
+  <header>
+    <h1>TapiStock - Gestion du Stock</h1>
+    <a href="index.html" class="back-btn">Retour à la caisse</a>
+  </header>
+  
+  <div class="stock-main">
+    <!-- Left column - Stock list -->
+    <section class="stock-list">
+      <table class="stock-table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Prix</th>
+            <th>Stock</th>
+            <th>Catégorie</th>
+          </tr>
+        </thead>
+        <tbody id="stockTableBody">
+          <!-- Stock items will be loaded here -->
+        </tbody>
+      </table>
+    </section>
+    
+    <!-- Right column - Forms and Actions -->
+    <aside class="stock-actions">
+      <div class="action-buttons">
+        <button id="addProductBtn">Ajouter un produit</button>
+        <button id="restockBtn">Réapprovisionner</button>
+        <button id="exportBtn">Exporter les données</button>
+      </div>
+      
+      <div id="addProductForm" class="stock-form">
+        <h3>Ajouter un nouveau produit</h3>
+        <input type="text" id="productName" placeholder="Nom du produit">
+        <input type="number" id="productPrice" placeholder="Prix (en centimes)">
+        <!--PROBLEM !!! CE N:EST PAS BIEN FAIT-->
+        <select id="productCategory">
+          <option value="">Sélectionner une catégorie</option>
+          <option value="boisson">Boisson</option>
+          <option value="snack">Snack</option>
+          <option value="dessert">Dessert</option>
+          <option value="merchandise">Merchandise</option>
+        </select>
+        <div class="form-buttons">
+          <button id="saveProductBtn" class="save-btn">Enregistrer</button>
+          <button id="cancelAddBtn" class="cancel-btn">Annuler</button>
+        </div>
+      </div>
+      
+      <div id="restockForm" class="stock-form">
+        <h3>Réapprovisionner</h3>
+        <select id="restockProduct">
+          <option value="">Sélectionner un produit</option>
+        </select>
+        <input type="number" id="restockQuantity" placeholder="Quantité">
+        <input type="number" id="restockPrice" placeholder="Prix d'achat (en centimes)">
+        <div class="form-buttons">
+          <button id="saveRestockBtn" class="save-btn">Enregistrer</button>
+          <button id="cancelRestockBtn" class="cancel-btn">Annuler</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script type="text/javascript" src="stock.js"></script>
+
+</body>
+</html>

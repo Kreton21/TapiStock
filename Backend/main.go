@@ -4,7 +4,7 @@ import (
     "database/sql"
     "encoding/json"
     "net/http"
-
+    "strconv" 
     _ "github.com/mattn/go-sqlite3"
 )
 
@@ -98,7 +98,6 @@ func gestionAchat(w http.ResponseWriter, r *http.Request) {
         "items":  req.Items,
     })
 }
-
 func creerProduit(w http.ResponseWriter, r *http.Request) {
     // Only allow POST requests
     if r.Method != http.MethodPost {
@@ -106,28 +105,28 @@ func creerProduit(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Decode JSON body
+    // Parse the product directly - no need for temp struct
     var p Produit
     err := json.NewDecoder(r.Body).Decode(&p)
     if err != nil {
-        http.Error(w, "Invalid JSON", http.StatusBadRequest)
+        http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
         return
     }
 
-    // Insert into SQLite DB
+    // Insert into SQLite DB - price is already an integer
     _, err = db.Exec(
-        `INSERT INTO produits (nom, prixVente,stock,category) VALUES (?,?,?,?)`,
-        p.Nom, p.PrixVente,0 ,p.Category,
+        `INSERT INTO produits (nom, prixVente, stock, category) VALUES (?, ?, ?, ?)`,
+        p.Nom, p.PrixVente, p.Stock, p.Category,
     )
     if err != nil {
         http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
         return
     }
 
-    // Respond with success
+    // Respond with success - keeping the integer price
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(map[string]interface{}{
-        "status": "ok",
+        "status":  "ok",
         "produit": p,
     })
 }
@@ -146,7 +145,7 @@ func getStock(w http.ResponseWriter, r *http.Request) {
     }
     defer rows.Close()
 
-    // Build a slice of products
+    // Build a slice of products with integer prices
     var produits []Produit
     for rows.Next() {
         var p Produit
@@ -158,30 +157,49 @@ func getStock(w http.ResponseWriter, r *http.Request) {
         produits = append(produits, p)
     }
 
-    // Return JSON
+    // Return JSON with integer prices
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(produits)
 }
-
 func ajouterStock(w http.ResponseWriter, r *http.Request) {
     query := r.URL.Query()
 
     produit := query.Get("produit")
-    prix_achat := query.Get("prix_achat")
-    quantite := query.Get("quantite")
+    prixAchatStr := query.Get("prix_achat")
+    quantiteStr := query.Get("quantite")
 
-    _, err := db.Exec(`
+    // Convert string to float64, then to integer cents
+    prixAchat, err := strconv.ParseFloat(prixAchatStr, 64)
+    if err != nil {
+        http.Error(w, "Invalid price format: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    prixAchatCents := int(prixAchat * 100)
+
+    // Convert quantity string to int
+    quantite, err := strconv.Atoi(quantiteStr)
+    if err != nil {
+        http.Error(w, "Invalid quantity format: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    _, err = db.Exec(`
     INSERT INTO restock (produit, prixAchat, stock) VALUES (?, ?, ?);
-    `, produit, prix_achat, quantite)
-	if err != nil {
+    `, produit, prixAchatCents, quantite)
+    if err != nil {
         http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
         return
     }
-	_, err = db.Exec(`UPDATE produits SET stock = stock + ? WHERE nom = ?;`, quantite, produit)
-	if err != nil {
+    
+    _, err = db.Exec(`UPDATE produits SET stock = stock + ? WHERE nom = ?;`, quantite, produit)
+    if err != nil {
         http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
         return
     }
+    
+    // Return success response
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
 func getHistory(w http.ResponseWriter, r *http.Request) {
     if r.Method != http.MethodGet {
