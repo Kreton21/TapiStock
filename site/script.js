@@ -1,3 +1,21 @@
+// Check authentication on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (!auth.checkAuthOnLoad()) {
+        return; // Will redirect to login
+    }
+    
+    // Set current user in header
+    document.getElementById('currentUser').textContent = auth.getUsername();
+    
+    // Add logout handler
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        auth.logout();
+    });
+    
+    // Initialize the app
+    initializeApp();
+});
+
 const productsDiv = document.getElementById("products");
 const cartItemsDiv = document.getElementById("cart-items");
 const totalSpan = document.getElementById("total");
@@ -41,7 +59,9 @@ function formatPrice(cents) {
 }
 
 async function fetchProducts() {
-  const res = await fetch("/api/getStock");
+  const res = await auth.makeAuthenticatedRequest("/api/getStock");
+  if (!res) return;
+  
   allProducts = await res.json();
   
   generateCategoryTabs(allProducts);
@@ -318,11 +338,13 @@ buyBtn.onclick = async () => {
   if (cart.length === 0) return;
   
   try {
-    const res = await fetch("/api/acheter", {
+    const res = await auth.makeAuthenticatedRequest("/api/acheter", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ items: cart })
     });
+    
+    if (!res) return; // Auth failed, already redirected
     
     if (res.ok) {
 
@@ -360,7 +382,9 @@ buyBtn.onclick = async () => {
 // History modal functionality
 async function showHistory() {
   try {
-    const res = await fetch("/api/getHistory");
+    const res = await auth.makeAuthenticatedRequest("/api/getHistory");
+    if (!res) return; // Auth failed, already redirected
+    
     if (!res.ok) {
       throw new Error("Failed to fetch history");
     }
@@ -414,12 +438,8 @@ window.addEventListener("click", (event) => {
     historyModal.style.display = "none";
   }
 });
-// Stock button functionality
-document.getElementById('stockBtn').addEventListener('click', function() {
-  window.location.href = 'stock.html';
-});
-// Initialize
-document.addEventListener("DOMContentLoaded", function() {
+
+function initializeApp() {
   fetchProducts();
   
   // Set up event listeners for history modal
@@ -438,4 +458,4 @@ document.addEventListener("DOMContentLoaded", function() {
   document.getElementById('stockBtn').addEventListener('click', function() {
     window.location.replace('stock.html');
   });
-});
+}

@@ -4,7 +4,11 @@ import (
     "database/sql"
     "encoding/json"
     "net/http"
-    "strconv" 
+    "strconv"
+    "crypto/sha256"
+    "fmt"
+    "time"
+    "math/rand"
     _ "github.com/mattn/go-sqlite3"
 )
 
@@ -34,9 +38,24 @@ type Vente struct {
     Heure   string `json:"heure"`
 }
 
+type User struct {
+    Username string `json:"username"`
+    Password string `json:"password"`
+}
+
+type LoginResponse struct {
+    Success bool   `json:"success"`
+    Token   string `json:"token,omitempty"`
+    Message string `json:"message,omitempty"`
+}
+
+var sessions = make(map[string]string) // token -> username
+
 
 
 func main() {
+    rand.Seed(time.Now().UnixNano())
+    
     var err error
     db, err = sql.Open("sqlite3", "stock.db")
     if err != nil { panic(err) }
@@ -45,13 +64,27 @@ func main() {
     // Init DB
     db.Exec(`CREATE TABLE IF NOT EXISTS produits (nom TEXT PRIMARY KEY, prixVente INTEGER, stock INTEGER, category TEXT);
 			CREATE TABLE IF NOT EXISTS restock (id INTEGER PRIMARY KEY AUTOINCREMENT, produit TEXT, prixAchat INTEGER, stock INTEGER);
-			CREATE TABLE IF NOT EXISTS ventes (id INTEGER PRIMARY KEY AUTOINCREMENT, produit TEXT, stock INTEGER, heure DATE);`)
+			CREATE TABLE IF NOT EXISTS ventes (id INTEGER PRIMARY KEY AUTOINCREMENT, produit TEXT, stock INTEGER, heure DATE);
+			CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password_hash TEXT);`)
 
-	http.HandleFunc("/api/acheter",gestionAchat)
-	http.HandleFunc("/api/creerProduit",creerProduit)
-	http.HandleFunc("/api/getStock",getStock)
-	http.HandleFunc("/api/ajouterStock",ajouterStock)
-	http.HandleFunc("/api/getHistory", getHistory)
+	// Create default admin user if no users exist
+	var userCount int
+	db.QueryRow("SELECT COUNT(*) FROM users").Scan(&userCount)
+	if userCount == 0 {
+		defaultPassword := "admin"
+		hasher := sha256.New()
+		hasher.Write([]byte(defaultPassword))
+		hash := fmt.Sprintf("%x", hasher.Sum(nil))
+		db.Exec("INSERT INTO users (username, password_hash) VALUES (?, ?)", "admin", hash)
+	}
+
+	http.HandleFunc("/api/login", handleLogin)
+	http.HandleFunc("/api/logout", handleLogout)
+	http.HandleFunc("/api/acheter", requireAuth(gestionAchat))
+	http.HandleFunc("/api/creerProduit", requireAuth(creerProduit))
+	http.HandleFunc("/api/getStock", requireAuth(getStock))
+	http.HandleFunc("/api/ajouterStock", requireAuth(ajouterStock))
+	http.HandleFunc("/api/getHistory", requireAuth(getHistory))
 
 
 
@@ -227,4 +260,94 @@ func getHistory(w http.ResponseWriter, r *http.Request) {
 
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(history)
+}
+
+func generateToken() string {
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    token := make([]byte, 32)
+    for i := range token {
+        token[i] = chars[rand.Intn(len(chars))]
+    }
+    return string(token)
+}
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    var user User
+    err := json.NewDecoder(r.Body).Decode(&user)
+    if err != nil {
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(LoginResponse{
+            Success: false,
+            Message: "Invalid JSON",
+        })
+        return
+    }
+
+    // Hash the provided password
+    hasher := sha256.New()
+    hasher.Write([]byte(user.Password))
+    providedHash := fmt.Sprintf("%x", hasher.Sum(nil))
+
+    // Check against database
+    var storedHash string
+    err = db.QueryRow("SELECT password_hash FROM users WHERE username = ?", user.Username).Scan(&storedHash)
+    if err != nil || storedHash != providedHash {
+        w.Header().Set("Content-Type", "application/json")
+        json.NewEncoder(w).Encode(LoginResponse{
+            Success: false,
+            Message: "Invalid credentials",
+        })
+        return
+    }
+
+    // Generate token and store session
+    token := generateToken()
+    sessions[token] = user.Username
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(LoginResponse{
+        Success: true,
+        Token:   token,
+        Message: "Login successful",
+    })
+}
+
+func handleLogout(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    token := r.Header.Get("Authorization")
+    if token != "" {
+        delete(sessions, token)
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+}
+
+func requireAuth(next http.HandlerFunc) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        token := r.Header.Get("Authorization")
+        if token == "" {
+            http.Error(w, "Unauthorized: No token provided", http.StatusUnauthorized)
+            return
+        }
+
+        username, exists := sessions[token]
+        if !exists {
+            http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+            return
+        }
+
+        // Add username to request context if needed
+        r.Header.Set("X-Username", username)
+        next(w, r)
+    }
 }

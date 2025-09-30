@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Check authentication
+    if (!auth.checkAuthOnLoad()) {
+        return; // Will redirect to login
+    }
+    
+    // Set current user in header
+    document.getElementById('currentUser').textContent = auth.getUsername();
+    
+    // Add logout handler
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        auth.logout();
+    });
+    
     const addProductBtn = document.getElementById('addProductBtn');
     const restockBtn = document.getElementById('restockBtn');
     const addProductForm = document.getElementById('addProductForm');
@@ -37,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const response = await fetch('/api/creerProduit', {
+        const response = await auth.makeAuthenticatedRequest('/api/creerProduit', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -49,6 +62,8 @@ document.addEventListener('DOMContentLoaded', function() {
             category: category
           })
         });
+        
+        if (!response) return; // Auth failed, already redirected
         
         if (response.ok) {
           alert('Produit ajouté avec succès');
@@ -78,7 +93,9 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       try {
-        const response = await fetch(`/api/ajouterStock?produit=${encodeURIComponent(product)}&prix_achat=${price}&quantite=${quantity}`);
+        const response = await auth.makeAuthenticatedRequest(`/api/ajouterStock?produit=${encodeURIComponent(product)}&prix_achat=${price}&quantite=${quantity}`);
+        
+        if (!response) return; // Auth failed, already redirected
         
         if (response.ok) {
           alert('Stock ajouté avec succès');
@@ -99,7 +116,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load products for restock dropdown
     async function loadProductsForRestock() {
       try {
-        const response = await fetch('/api/getStock');
+        const response = await auth.makeAuthenticatedRequest('/api/getStock');
+        if (!response) return; // Auth failed, already redirected
+        
         const products = await response.json();
         
         const select = document.getElementById('restockProduct');
@@ -119,7 +138,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load current stock
     async function loadStock() {
       try {
-        const response = await fetch('/api/getStock');
+        const response = await auth.makeAuthenticatedRequest('/api/getStock');
+        if (!response) return; // Auth failed, already redirected
+        
         const products = await response.json();
         
         stockTableBody.innerHTML = '';
@@ -147,7 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Export data
     document.getElementById('exportBtn').addEventListener('click', async () => {
       try {
-        const response = await fetch('/api/getStock');
+        const response = await auth.makeAuthenticatedRequest('/api/getStock');
+        if (!response) return; // Auth failed, already redirected
+        
         const products = await response.json();
         
         const csvContent = 'data:text/csv;charset=utf-8,' + 

@@ -10,14 +10,19 @@
   <!-- Minimal CSS -->
   <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
   <link rel="stylesheet" href="style.css">
+  <script src="auth.js"></script>
 
 </head>
 <body>
   <header>
     <img src="/media/logoRenard.png" alt="Logo Renard" class="small-logo">
     <h1>TapiStock</h1>
-    <button id="stockBtn" class="stock-btn">Gestion Stock</button>
-    <button id="historyBtn" class="history-btn">Historique</button>
+    <div class="header-controls">
+      <span class="user-info">Connecté: <span id="currentUser"></span></span>
+      <button id="stockBtn" class="stock-btn">Gestion Stock</button>
+      <button id="historyBtn" class="history-btn">Historique</button>
+      <button id="logoutBtn" class="logout-btn">Déconnexion</button>
+    </div>
   </header>
   
   <!-- History Modal -->

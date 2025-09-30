@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TapiStock - Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon" href="/media/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/media/favicon.ico" type="image/x-icon">
+  <!-- Minimal CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <main class="container">
+    <div class="login-container">
+      <div class="login-header">
+        <img src="/media/logoRenard.png" alt="Logo Renard" class="logo">
+        <h1>TapiStock</h1>
+        <p>Connexion à votre espace de gestion</p>
+      </div>
+      
+      <form id="loginForm" class="login-form">
+        <div class="form-group">
+          <label for="username">Nom d'utilisateur</label>
+          <input type="text" id="username" name="username" required autocomplete="username">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        
+        <button type="submit" id="loginBtn" class="login-btn">
+          <span class="btn-text">Se connecter</span>
+          <span class="btn-loading" style="display: none;">Connexion...</span>
+        </button>
+        
+        <div id="errorMessage" class="error-message" style="display: none;"></div>
+      </form>
+      
+      <div class="login-footer">
+        <p>Compte par défaut: admin / admin</p>
+      </div>
+    </div>
+  </main>
+  
+  <script src="login.js"></script>
+</body>
+</html>
