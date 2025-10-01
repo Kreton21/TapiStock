@@ -21,6 +21,8 @@ func main() {
 	http.HandleFunc("/api/getStock", handlers.RequireAuth(handlers.GetStock))
 	http.HandleFunc("/api/ajouterStock", handlers.RequireAuth(handlers.AjouterStock))
 	http.HandleFunc("/api/getHistory", handlers.RequireAuth(handlers.GetHistory))
+	http.HandleFunc("/api/getCategories", handlers.RequireAuth(handlers.GetCategories))
+	http.HandleFunc("/api/createCategory", handlers.RequireAuth(handlers.CreateCategory))
 
 	log.Println("Server starting on :9090")
 	if err := http.ListenAndServe(":9090", nil); err != nil {

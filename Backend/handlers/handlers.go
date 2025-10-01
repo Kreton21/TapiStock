@@ -4,12 +4,87 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-
+	"strings"
 	"tapistock/auth"
 	"tapistock/database"
 	"tapistock/models"
 )
+func GetCategories(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodGet {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
 
+    // Try categories table first (ignore error if table missing)
+    rows, err := database.DB.Query(`SELECT nom FROM categories ORDER BY nom`)
+    categories := []string{}
+    if err == nil {
+        defer rows.Close()
+        for rows.Next() {
+            var c string
+            if err := rows.Scan(&c); err == nil && c != "" {
+                categories = append(categories, c)
+            }
+        }
+    }
+
+    // If no categories table data, fall back to distinct categories from produits
+    if len(categories) == 0 {
+        rows2, err2 := database.DB.Query(`SELECT DISTINCT category FROM produits WHERE category IS NOT NULL AND category != '' ORDER BY category`)
+        if err2 == nil {
+            defer rows2.Close()
+            for rows2.Next() {
+                var c string
+                if err := rows2.Scan(&c); err == nil && c != "" {
+                    categories = append(categories, c)
+                }
+            }
+        }
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(categories)
+}
+
+// CreateCategory inserts a new category (idempotent)
+func CreateCategory(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    var req struct {
+        Category string `json:"category"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    req.Category = strings.TrimSpace(req.Category)
+    if req.Category == "" {
+        http.Error(w, "Category cannot be empty", http.StatusBadRequest)
+        return
+    }
+
+    // Ensure categories table exists (safe no-op if already there)
+    _, _ = database.DB.Exec(`CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nom TEXT UNIQUE NOT NULL
+    )`)
+
+    // Insert (ignore if already exists)
+    _, err := database.DB.Exec(`INSERT OR IGNORE INTO categories (nom) VALUES (?)`, req.Category)
+    if err != nil {
+        http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    _ = json.NewEncoder(w).Encode(map[string]any{
+        "status":   "ok",
+        "category": req.Category,
+    })
+}
 // GestionAchat handles purchase requests
 func GestionAchat(w http.ResponseWriter, r *http.Request) {
 	// Only allow POST

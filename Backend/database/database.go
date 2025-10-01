@@ -13,11 +13,13 @@ var DB *sql.DB
 // InitDB initializes the database connection and creates tables
 func InitDB(dbPath string) error {
 	var err error
-	DB, err = sql.Open("sqlite3", dbPath)
+	DB, err = sql.Open("sqlite3", dbPath+"?_foreign_keys=on")
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
-
+	if _, err := DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		return fmt.Errorf("failed to enable foreign keys: %w", err)
+	}
 	// Test connection
 	if err := DB.Ping(); err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)
@@ -39,12 +41,18 @@ func InitDB(dbPath string) error {
 // createTables creates all necessary database tables
 func createTables() error {
 	queries := []string{
-		`CREATE TABLE IF NOT EXISTS produits (
-			nom TEXT PRIMARY KEY, 
-			prixVente INTEGER, 
-			stock INTEGER, 
-			category TEXT
+		`CREATE TABLE IF NOT EXISTS categories (
+			nom TEXT PRIMARY KEY
 		);`,
+        `CREATE TABLE IF NOT EXISTS produits (
+            nom TEXT PRIMARY KEY, 
+            prixVente INTEGER, 
+            stock INTEGER, 
+            category TEXT,
+            FOREIGN KEY(category) REFERENCES categories(nom)
+                ON UPDATE CASCADE
+                ON DELETE SET NULL
+        );`,
 		`CREATE TABLE IF NOT EXISTS restock (
 			id INTEGER PRIMARY KEY AUTOINCREMENT, 
 			produit TEXT, 

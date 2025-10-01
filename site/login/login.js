@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 // Token is valid, redirect to main page
-                window.location.href = '/index.html';
+                window.location.href = '/main/index.html';
             } else {
                 // Token is invalid, remove it
                 localStorage.removeItem('authToken');

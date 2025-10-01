@@ -331,20 +331,6 @@
         <button id="restockBtn">Réapprovisionner</button>
         <button id="exportBtn">Exporter les données</button>
       </div>
-      
-      <!-- Restock form stays inline -->
-      <div id="restockForm" class="stock-form">
-        <h3>Réapprovisionner</h3>
-        <select id="restockProduct">
-          <option value="">Sélectionner un produit</option>
-        </select>
-        <input type="number" id="restockQuantity" placeholder="Quantité">
-        <input type="number" id="restockPrice" placeholder="Prix d'achat (en centimes)">
-        <div class="form-buttons">
-          <button id="saveRestockBtn" class="save-btn">Enregistrer</button>
-          <button id="cancelRestockBtn" class="cancel-btn">Annuler</button>
-        </div>
-      </div>
     </aside>
   </div>
 
@@ -358,14 +344,28 @@
         <input type="number" id="productPrice" placeholder="Prix (en centimes)">
         <select id="productCategory">
           <option value="">Sélectionner une catégorie</option>
-          <option value="boisson">Boisson</option>
-          <option value="snack">Snack</option>
-          <option value="dessert">Dessert</option>
-          <option value="merchandise">Merchandise</option>
         </select>
         <div class="form-buttons">
           <button id="saveProductBtn" class="save-btn">Enregistrer</button>
           <button id="cancelAddBtn" class="cancel-btn">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Restock Modal (new) -->
+  <div id="restockModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <div class="stock-form">
+        <h3>Réapprovisionner</h3>
+        <select id="restockProduct">
+          <option value="">Sélectionner un produit</option>
+        </select>
+        <input type="number" id="restockQuantity" placeholder="Quantité">
+        <input type="number" id="restockPrice" placeholder="Prix d'achat (en centimes)">
+        <div class="form-buttons">
+          <button id="saveRestockBtn" class="save-btn">Enregistrer</button>
+          <button id="cancelRestockModalBtn" class="cancel-btn">Annuler</button>
         </div>
       </div>
     </div>

@@ -14,48 +14,47 @@ document.addEventListener('DOMContentLoaded', function() {
   
   const addProductBtn = document.getElementById('addProductBtn');
   const restockBtn = document.getElementById('restockBtn');
-  const addProductModal = document.getElementById('addProductModal'); // This is correct
-  const restockForm = document.getElementById('restockForm');
+  const addProductModal = document.getElementById('addProductModal'); 
   const stockTableBody = document.getElementById('stockTableBody');
-  const closeModalBtn = document.querySelector('.close-modal');
-  
+  const restockModal = document.getElementById('restockModal');
+  const saveRestockBtn = document.getElementById('saveRestockBtn');
+  const cancelRestockModalBtn = document.getElementById('cancelRestockModalBtn');
+
   // Show/hide add product modal
   addProductBtn.addEventListener('click', () => {
-    addProductModal.style.display = 'block'; // Use addProductModal, not addProductForm
-    restockForm.classList.remove('active');
+    addProductModal.style.display = 'block';
+    loadCategories();
   });
   
-  // Close modal when clicking X
-  closeModalBtn.addEventListener('click', () => {
+  // Close modal when clicking X for add product
+  addProductModal.querySelector('.close-modal').addEventListener('click', () => {
     addProductModal.style.display = 'none';
   });
   
-  // Close modal when clicking outside
+  // Close modal when clicking outside for add product
   window.addEventListener('click', (e) => {
     if (e.target === addProductModal) {
       addProductModal.style.display = 'none';
+    }
+    if (e.target === restockModal) {
+      restockModal.style.display = 'none';
     }
   });
   
   // Close modal with Escape key
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && addProductModal.style.display === 'block') {
-      addProductModal.style.display = 'none';
+    if (e.key === 'Escape') {
+      if (addProductModal.style.display === 'block') {
+        addProductModal.style.display = 'none';
+      }
+      if (restockModal.style.display === 'block') {
+        restockModal.style.display = 'none';
+      }
     }
-  });
-  
-  // Show/hide restock form
-  restockBtn.addEventListener('click', () => {
-    restockForm.classList.toggle('active');
-    loadProductsForRestock();
   });
   
   document.getElementById('cancelAddBtn').addEventListener('click', () => {
     addProductModal.style.display = 'none';
-  });
-  
-  document.getElementById('cancelRestockBtn').addEventListener('click', () => {
-    restockForm.classList.remove('active');
   });
   
   // Save new product
@@ -64,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const price = document.getElementById('productPrice').value;
     const category = document.getElementById('productCategory').value;
     
-    if (!name || !price || !category) {
+    if (!name || !price || !category || category === 'new_category') {
       alert('Veuillez remplir tous les champs');
       return;
     }
@@ -101,8 +100,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Open restock modal
+  restockBtn.addEventListener('click', () => {
+    restockModal.style.display = 'block';
+    loadProductsForRestock();
+  });
+  
+  // Close modal on X click for restock
+  restockModal.querySelector('.close-modal').addEventListener('click', () => {
+    restockModal.style.display = 'none';
+  });
+
+  // Cancel button inside restock modal
+  cancelRestockModalBtn.addEventListener('click', () => {
+    restockModal.style.display = 'none';
+  });
+
   // Save restock
-  document.getElementById('saveRestockBtn').addEventListener('click', async () => {
+  saveRestockBtn.addEventListener('click', async () => {
     const product = document.getElementById('restockProduct').value;
     const quantity = document.getElementById('restockQuantity').value;
     const price = document.getElementById('restockPrice').value;
@@ -119,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
       
       if (response.ok) {
         alert('Stock ajouté avec succès');
-        restockForm.classList.remove('active');
+        restockModal.style.display = 'none';
         document.getElementById('restockProduct').value = '';
         document.getElementById('restockQuantity').value = '';
         document.getElementById('restockPrice').value = '';
@@ -154,6 +169,63 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Error:', error);
     }
   }
+  
+  async function loadCategories() {
+    const select = document.getElementById('productCategory');
+    // reset to only the default option
+    select.innerHTML = '<option value="">Sélectionner une catégorie</option>';
+    try {
+      const res = await auth.makeAuthenticatedRequest('/api/getCategories');
+      if (!res || !res.ok) return;
+      const categories = await res.json();
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+        select.appendChild(opt);
+      });
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    } finally {
+      // always add the "new category" option
+      const newOpt = document.createElement('option');
+      newOpt.value = 'new_category';
+      newOpt.textContent = '+ Nouvelle catégorie';
+      select.appendChild(newOpt);
+    }
+  }
+  
+  document.getElementById('productCategory').addEventListener('change', async function() {
+    if (this.value !== 'new_category') return;
+    const name = prompt('Entrez le nom de la nouvelle catégorie :');
+    if (!name || !name.trim()) {
+      this.value = '';
+      return;
+    }
+    try {
+      const res = await auth.makeAuthenticatedRequest('/api/createCategory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: name.trim() })
+      });
+      if (!res || !res.ok) {
+        alert('Erreur création catégorie');
+        this.value = '';
+        return;
+      }
+      // insert new category before the "new" option
+      const opt = document.createElement('option');
+      opt.value = name.trim();
+      opt.textContent = name.trim().charAt(0).toUpperCase() + name.trim().slice(1);
+      const newOpt = this.querySelector('option[value="new_category"]');
+      this.insertBefore(opt, newOpt);
+      this.value = name.trim();
+    } catch (e) {
+      console.error(e);
+      alert('Erreur réseau');
+      this.value = '';
+    }
+  });
   
   // Load current stock
   async function loadStock() {
