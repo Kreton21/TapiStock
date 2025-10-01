@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TapiStock - Gestion Stock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preload" href="/main/index.html" as="fetch" crossorigin="anonymous">
+  <link rel="shortcut icon" href="/media/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/media/favicon.ico" type="image/x-icon">
+
+  <!-- Minimal CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+  <link rel="stylesheet" href="/main/style.css">
+  <style>
+    /* Stock page specific styling */
+    body {
+      height: 100vh;
+      margin: 0;
+      padding: 1rem;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .header-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .user-info {
+      font-size: 0.9rem;
+      color: #555;
+    }
+    
+    .stock-main {
+      display: grid;
+      grid-template-columns: 3fr 1fr;
+      gap: 1.5rem;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+    
+    /* Left column - Stock list */
+    .stock-list {
+      background-color: #f9f9f9;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-y: auto;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      height: 100%;
+    }
+    
+    .stock-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .stock-table th {
+      text-align: left;
+      padding: 0.8rem 0.5rem;
+      border-bottom: 2px solid #ddd;
+      position: sticky;
+      top: 0;
+      background-color: #f9f9f9;
+      z-index: 1;
+    }
+    
+    .stock-table td {
+      padding: 0.8rem 0.5rem;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .stock-table tr:hover {
+      background-color: #f5f5f5;
+    }
+    
+    /* Right column - Actions */
+    .stock-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      height: 100%;
+    }
+    
+    .action-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .action-buttons button {
+      padding: 0.8rem;
+      border-radius: 6px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    
+    #addProductBtn {
+      background-color: #3498db;
+      color: white;
+    }
+    
+    #addProductBtn:hover {
+      background-color: #2980b9;
+    }
+    
+    #restockBtn {
+      background-color: #2ecc71;
+      color: white;
+    }
+    
+    #restockBtn:hover {
+      background-color: #27ae60;
+    }
+    
+    #exportBtn {
+      background-color: #f39c12;
+      color: white;
+    }
+    
+    #exportBtn:hover {
+      background-color: #e67e22;
+    }
+    
+    .back-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .back-btn:hover {
+      background-color: #c0392b;
+    }
+    
+    .logout-btn {
+      background-color: #95a5a6;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    
+    .logout-btn:hover {
+      background-color: #7f8c8d;
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 5% auto;
+      padding: 2rem;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      animation: slideDown 0.3s ease;
+      position: relative;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideDown {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    .close-modal {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+      line-height: 1;
+    }
+    
+    .close-modal:hover {
+      color: #000;
+    }
+    
+    .stock-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .stock-form h3 {
+      margin-top: 0;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      color: #333;
+    }
+    
+    .stock-form input, 
+    .stock-form select {
+      padding: 0.8rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    .stock-form input:focus,
+    .stock-form select:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+    
+    .form-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    
+    .save-btn {
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      flex: 1;
+      font-weight: 500;
+    }
+    
+    .save-btn:hover {
+      background-color: #27ae60;
+    }
+    
+    .cancel-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    
+    .cancel-btn:hover {
+      background-color: #c0392b;
+    }
+    
+    /* Restock form inline style */
+    #restockForm {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 1.2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: none;
+    }
+    
+    #restockForm.active {
+      display: flex;
+    }
+    
+    .low-stock {
+      color: #e74c3c;
+      font-weight: bold;
+    }
+  </style>
+  <script src="/login/auth.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Gestion du Stock</h1>
+    <div class="header-controls">
+      <span class="user-info">Connecté: <span id="currentUser"></span></span>
+      <a href="index.html" class="back-btn">Retour à la caisse</a>
+      <button id="logoutBtn" class="logout-btn">Déconnexion</button>
+    </div>
+  </header>
+  
+  <div class="stock-main">
+    <!-- Left column - Stock list -->
+    <section class="stock-list">
+      <table class="stock-table">
+        <thead>
+          <tr>
+            <th>Produit</th>
+            <th>Prix</th>
+            <th>Stock</th>
+            <th>Catégorie</th>
+          </tr>
+        </thead>
+        <tbody id="stockTableBody">
+          <!-- Stock items will be loaded here -->
+        </tbody>
+      </table>
+    </section>
+    
+    <!-- Right column - Actions -->
+    <aside class="stock-actions">
+      <div class="action-buttons">
+        <button id="addProductBtn">Ajouter un produit</button>
+        <button id="restockBtn">Réapprovisionner</button>
+        <button id="exportBtn">Exporter les données</button>
+      </div>
+      
+      <!-- Restock form stays inline -->
+      <div id="restockForm" class="stock-form">
+        <h3>Réapprovisionner</h3>
+        <select id="restockProduct">
+          <option value="">Sélectionner un produit</option>
+        </select>
+        <input type="number" id="restockQuantity" placeholder="Quantité">
+        <input type="number" id="restockPrice" placeholder="Prix d'achat (en centimes)">
+        <div class="form-buttons">
+          <button id="saveRestockBtn" class="save-btn">Enregistrer</button>
+          <button id="cancelRestockBtn" class="cancel-btn">Annuler</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div id="addProductModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <div class="stock-form">
+        <h3>Ajouter un nouveau produit</h3>
+        <input type="text" id="productName" placeholder="Nom du produit">
+        <input type="number" id="productPrice" placeholder="Prix (en centimes)">
+        <select id="productCategory">
+          <option value="">Sélectionner une catégorie</option>
+          <option value="boisson">Boisson</option>
+          <option value="snack">Snack</option>
+          <option value="dessert">Dessert</option>
+          <option value="merchandise">Merchandise</option>
+        </select>
+        <div class="form-buttons">
+          <button id="saveProductBtn" class="save-btn">Enregistrer</button>
+          <button id="cancelAddBtn" class="cancel-btn">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript" src="/stock/stock.js"></script>
+</body>
+</html>

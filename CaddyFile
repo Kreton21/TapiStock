@@ -1,7 +1,34 @@
 :8080 {
-    root * ./site
-    file_server
-
-    # Proxy API requests to your Go backend
+    # Proxy API requests to your Go backend first
     reverse_proxy /api/* localhost:9090
+
+    # Handle requests for the login page and its assets
+    handle_path /login/* {
+        root * ./site/login
+        rewrite * {path}
+        file_server
+    }
+
+    # Handle requests for the main cash register page and its assets
+    handle_path /main/* {
+        root * ./site/main
+        rewrite * {path}
+        file_server
+    }
+
+    # Handle requests for the stock management page and its assets
+    handle_path /stock/* {
+        root * ./site/stock
+        rewrite * {path}
+        file_server
+    }
+
+    # Handle shared media files
+    handle /media/* {
+        root * ./site
+        file_server
+    }
+
+    # Redirect the root URL (/) to the login page
+    redir / /login/login.html
 }

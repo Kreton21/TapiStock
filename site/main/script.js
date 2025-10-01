@@ -456,6 +456,6 @@ function initializeApp() {
   
   // Improve navigation to stock page
   document.getElementById('stockBtn').addEventListener('click', function() {
-    window.location.replace('stock.html');
+    window.location.replace('/stock/stock.html');
   });
 }

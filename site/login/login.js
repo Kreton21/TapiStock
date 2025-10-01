@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show success and redirect
                 showSuccess('Connexion réussie! Redirection...');
                 setTimeout(() => {
-                    window.location.href = '/index.html';
+                    window.location.href = '/main/index.html';
                 }, 1000);
             } else {
                 showError(data.message || 'Erreur de connexion');

@@ -37,7 +37,7 @@ class AuthManager {
         this.username = null;
 
         // Redirect to login
-        window.location.href = '/login.html';
+        window.location.href = '/login/login.html';
     }
 
     async makeAuthenticatedRequest(url, options = {}) {

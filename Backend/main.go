@@ -9,13 +9,11 @@ import (
 )
 
 func main() {
-	// Initialize database
 	if err := database.InitDB("stock.db"); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
 	defer database.Close()
 
-	// Setup routes
 	http.HandleFunc("/api/login", handlers.HandleLogin)
 	http.HandleFunc("/api/logout", handlers.HandleLogout)
 	http.HandleFunc("/api/acheter", handlers.RequireAuth(handlers.GestionAchat))
