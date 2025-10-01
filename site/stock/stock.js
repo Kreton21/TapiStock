@@ -19,6 +19,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const restockModal = document.getElementById('restockModal');
   const saveRestockBtn = document.getElementById('saveRestockBtn');
   const cancelRestockModalBtn = document.getElementById('cancelRestockModalBtn');
+  
+  const modifyProductModal = document.getElementById('modifyProductModal');
+  const saveModifyBtn = document.getElementById('saveModifyBtn');
+  const deleteProductBtn = document.getElementById('deleteProductBtn');
+  
+  let currentModifyingProduct = null;
 
   // Show/hide add product modal
   addProductBtn.addEventListener('click', () => {
@@ -64,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const category = document.getElementById('productCategory').value;
     
     if (!name || !price || !category || category === 'new_category') {
-      alert('Veuillez remplir tous les champs');
+      showNotification('Veuillez remplir tous les champs', 'warning');
       return;
     }
     
@@ -85,18 +91,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!response) return; // Auth failed, already redirected
       
       if (response.ok) {
-        alert('Produit ajouté avec succès');
+        showNotification('Produit ajouté avec succès', 'success');
         addProductModal.style.display = 'none';
         document.getElementById('productName').value = '';
         document.getElementById('productPrice').value = '';
         document.getElementById('productCategory').value = '';
         loadStock();
       } else {
-        alert('Erreur lors de l\'ajout du produit');
+        showNotification('Erreur lors de l\'ajout du produit', 'error');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Erreur de connexion');
+      showNotification('Erreur de connexion', 'error');
     }
   });
   
@@ -123,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const price = document.getElementById('restockPrice').value;
     
     if (!product || !quantity || !price) {
-      alert('Veuillez remplir tous les champs');
+      showNotification('Veuillez remplir tous les champs', 'warning');
       return;
     }
     
@@ -133,18 +139,18 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!response) return; // Auth failed, already redirected
       
       if (response.ok) {
-        alert('Stock ajouté avec succès');
+        showNotification('Stock ajouté avec succès', 'success');
         restockModal.style.display = 'none';
         document.getElementById('restockProduct').value = '';
         document.getElementById('restockQuantity').value = '';
         document.getElementById('restockPrice').value = '';
         loadStock();
       } else {
-        alert('Erreur lors de l\'ajout du stock');
+        showNotification('Erreur lors de l\'ajout du stock', 'error');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Erreur de connexion');
+      showNotification('Erreur de connexion', 'error');
     }
   });
   
@@ -197,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   document.getElementById('productCategory').addEventListener('change', async function() {
     if (this.value !== 'new_category') return;
-    const name = prompt('Entrez le nom de la nouvelle catégorie :');
+    const name = await showPrompt('Entrez le nom de la nouvelle catégorie :');
     if (!name || !name.trim()) {
       this.value = '';
       return;
@@ -209,7 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
         body: JSON.stringify({ category: name.trim() })
       });
       if (!res || !res.ok) {
-        alert('Erreur création catégorie');
+        showNotification('Erreur création catégorie', 'error');
         this.value = '';
         return;
       }
@@ -222,16 +228,162 @@ document.addEventListener('DOMContentLoaded', function() {
       this.value = name.trim();
     } catch (e) {
       console.error(e);
-      alert('Erreur réseau');
+      showNotification('Erreur réseau', 'error');
       this.value = '';
     }
   });
+    // Close modify modal handlers
+  modifyProductModal.querySelector('.close-modal').addEventListener('click', () => {
+    modifyProductModal.style.display = 'none';
+  });
+
+  // Update the window click event listener to include modify modal
+  window.addEventListener('click', (e) => {
+    if (e.target === addProductModal) {
+      addProductModal.style.display = 'none';
+    }
+    if (e.target === restockModal) {
+      restockModal.style.display = 'none';
+    }
+    if (e.target === modifyProductModal) {
+      modifyProductModal.style.display = 'none';
+    }
+  });
   
-  // Load current stock
+  // Update the Escape key handler to include modify modal
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (addProductModal.style.display === 'block') {
+        addProductModal.style.display = 'none';
+      }
+      if (restockModal.style.display === 'block') {
+        restockModal.style.display = 'none';
+      }
+      if (modifyProductModal.style.display === 'block') {
+        modifyProductModal.style.display = 'none';
+      }
+    }
+  });
+
+  // Save product modifications
+  saveModifyBtn.addEventListener('click', async () => {
+    const name = document.getElementById('modifyProductName').value;
+    const price = document.getElementById('modifyProductPrice').value;
+    const category = document.getElementById('modifyProductCategory').value;
+    
+    if (!name || !price || !category || category === 'new_category') {
+      showNotification('Veuillez remplir tous les champs', 'warning');
+      return;
+    }
+    
+    try {
+      const response = await auth.makeAuthenticatedRequest('/api/modifyProduct', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nom: name,
+          prixVente: parseInt(price),
+          category: category
+        })
+      });
+      
+      if (!response) return;
+      
+      if (response.ok) {
+        showNotification('Produit modifié avec succès', 'success');
+        modifyProductModal.style.display = 'none';
+        loadStock();
+      } else {
+        showNotification('Erreur lors de la modification du produit', 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Erreur de connexion', 'error');
+    }
+  });
+
+  // Delete product
+  deleteProductBtn.addEventListener('click', async () => {
+    const name = document.getElementById('modifyProductName').value;
+    
+    if (!await showConfirm(`Êtes-vous sûr de vouloir supprimer "${name}" ?`)) {
+      return;
+    }
+    
+    try {
+      const response = await auth.makeAuthenticatedRequest('/api/deleteProduct', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nom: name
+        })
+      });
+      
+      if (!response) return;
+      
+      if (response.ok) {
+        showNotification('Produit supprimé avec succès', 'success');
+        modifyProductModal.style.display = 'none';
+        loadStock();
+      } else {
+        showNotification('Erreur lors de la suppression du produit', 'error');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Erreur de connexion', 'error');
+    }
+  });
+
+  // Open modify modal when clicking on a product row
+  function openModifyModal(product) {
+    currentModifyingProduct = product;
+    document.getElementById('modifyProductName').value = product.nom;
+    document.getElementById('modifyProductPrice').value = product.prixVente;
+    
+    // Load categories for the select
+    loadCategoriesForModify(product.category);
+    
+    modifyProductModal.style.display = 'block';
+  }
+
+  // Load categories for modify modal
+  async function loadCategoriesForModify(currentCategory) {
+    const select = document.getElementById('modifyProductCategory');
+    select.innerHTML = '<option value="">Sélectionner une catégorie</option>';
+    
+    try {
+      const res = await auth.makeAuthenticatedRequest('/api/getCategories');
+      if (!res || !res.ok) return;
+      
+      const categories = await res.json();
+      categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+        if (cat === currentCategory) {
+          opt.selected = true;
+        }
+        select.appendChild(opt);
+      });
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    } finally {
+      const newOpt = document.createElement('option');
+      newOpt.value = 'new_category';
+      newOpt.textContent = '+ Nouvelle catégorie';
+      select.appendChild(newOpt);
+    }
+  }
+
+  // Update loadStock to make rows clickable
   async function loadStock() {
     try {
       const response = await auth.makeAuthenticatedRequest('/api/getStock');
-      if (!response) return; // Auth failed, already redirected
+      if (!response) return;
       
       const products = await response.json();
       
@@ -240,7 +392,6 @@ document.addEventListener('DOMContentLoaded', function() {
       products.forEach(product => {
         const row = document.createElement('tr');
         
-        // Highlight low stock items
         const stockClass = product.stock < 5 ? 'low-stock' : '';
         
         row.innerHTML = `
@@ -250,12 +401,19 @@ document.addEventListener('DOMContentLoaded', function() {
           <td>${product.category || 'Non catégorisé'}</td>
         `;
         
+        // Make row clickable
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          openModifyModal(product);
+        });
+        
         stockTableBody.appendChild(row);
       });
     } catch (error) {
       console.error('Error:', error);
     }
   }
+
   
   // Export data
   document.getElementById('exportBtn').addEventListener('click', async () => {
@@ -278,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.body.removeChild(link);
     } catch (error) {
       console.error('Error:', error);
-      alert('Erreur lors de l\'exportation');
+      showNotification('Erreur lors de l\'exportation', 'error');
     }
   });
   

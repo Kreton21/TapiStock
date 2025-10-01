@@ -421,7 +421,7 @@ async function showHistory() {
     
   } catch (error) {
     console.error("Error fetching history:", error);
-    alert("Erreur lors du chargement de l'historique.");
+    showNotification("Erreur lors du chargement de l'historique.", 'error');
   }
 }
 

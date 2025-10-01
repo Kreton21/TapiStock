@@ -293,6 +293,14 @@
       color: #e74c3c;
       font-weight: bold;
     }
+    .stock-table tbody tr {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+    
+    .stock-table tbody tr:hover {
+      background-color: #e8f4f8;
+    }
   </style>
   <script src="/login/auth.js"></script>
 </head>
@@ -370,7 +378,26 @@
       </div>
     </div>
   </div>
+  <!-- Modify Product Modal -->
+  <div id="modifyProductModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <div class="stock-form">
+        <h3>Modifier le produit</h3>
+        <input type="text" id="modifyProductName" readonly placeholder="Nom du produit">
+        <input type="number" id="modifyProductPrice" placeholder="Nouveau prix (en centimes)">
+        <select id="modifyProductCategory">
+          <option value="">Sélectionner une catégorie</option>
+        </select>
+        <div class="form-buttons">
+          <button id="saveModifyBtn" class="save-btn">Enregistrer</button>
+          <button id="deleteProductBtn" style="background-color: #e74c3c;">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
+  <script type="text/javascript" src="/login/notification.js"></script>
   <script type="text/javascript" src="/stock/stock.js"></script>
 </body>
 </html>

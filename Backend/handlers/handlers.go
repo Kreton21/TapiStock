@@ -343,3 +343,75 @@ func RequireAuth(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+// ModifyProduct updates a product's price and category
+func ModifyProduct(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodPut && r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    var req struct {
+        Nom       string `json:"nom"`
+        PrixVente int    `json:"prixVente"`
+        Category  string `json:"category"`
+    }
+
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    if req.Nom == "" || req.PrixVente <= 0 {
+        http.Error(w, "Invalid product data", http.StatusBadRequest)
+        return
+    }
+
+    _, err := database.DB.Exec(
+        "UPDATE produits SET prixVente = ?, category = ? WHERE nom = ?",
+        req.PrixVente, req.Category, req.Nom,
+    )
+    if err != nil {
+        http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "status":  "ok",
+        "message": "Product updated successfully",
+    })
+}
+
+// DeleteProduct removes a product from the database
+func DeleteProduct(w http.ResponseWriter, r *http.Request) {
+    if r.Method != http.MethodDelete && r.Method != http.MethodPost {
+        http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+        return
+    }
+
+    var req struct {
+        Nom string `json:"nom"`
+    }
+
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, "Invalid JSON: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    if req.Nom == "" {
+        http.Error(w, "Product name is required", http.StatusBadRequest)
+        return
+    }
+
+    _, err := database.DB.Exec("DELETE FROM produits WHERE nom = ?", req.Nom)
+    if err != nil {
+        http.Error(w, "Database error: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]interface{}{
+        "status":  "ok",
+        "message": "Product deleted successfully",
+    })
+}
